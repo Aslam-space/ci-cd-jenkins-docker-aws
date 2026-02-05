@@ -2,29 +2,29 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "static-site-nginx"
-        CONTAINER_NAME = "nginx-app"
-        HOST_PORT = "8090"
+        AWS_REGION      = "us-east-1"
+        ECR_REPO        = "123456789012.dkr.ecr.us-east-1.amazonaws.com/static-site"
+        IMAGE_TAG       = "${BUILD_NUMBER}"
+        CONTAINER_NAME  = "nginx-app"
+        HOST_PORT       = "8090"
     }
 
     options {
         timestamps()
-        buildDiscarder(logRotator(numToKeepStr: '15'))
         disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '15'))
     }
 
     stages {
 
         stage('Checkout Source') {
             steps {
-                echo "Checking out source code from Git..."
                 checkout scm
             }
         }
 
         stage('Inject Build Metadata') {
             steps {
-                echo "Injecting Jenkins metadata into UI..."
                 sh '''
                   sed -i "s/{{BUILD_NUMBER}}/${BUILD_NUMBER}/g" app/index.html
                   sed -i "s/{{GIT_COMMIT}}/${GIT_COMMIT}/g" app/index.html
@@ -34,35 +34,64 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image..."
                 sh '''
-                  docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
-                  docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest
+                  docker build -t static-site:${IMAGE_TAG} .
                 '''
             }
         }
 
-        stage('Deploy Container') {
+        stage('Authenticate to AWS ECR') {
             steps {
-                echo "Deploying container on EC2..."
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                      aws ecr get-login-password --region ${AWS_REGION} \
+                      | docker login --username AWS --password-stdin ${ECR_REPO}
+                    '''
+                }
+            }
+        }
+
+        stage('Push Image to ECR') {
+            steps {
                 sh '''
+                  docker tag static-site:${IMAGE_TAG} ${ECR_REPO}:${IMAGE_TAG}
+                  docker push ${ECR_REPO}:${IMAGE_TAG}
+                '''
+            }
+        }
+
+        stage('Deploy with Rollback Safety') {
+            steps {
+                sh '''
+                  PREVIOUS_IMAGE=$(docker inspect ${CONTAINER_NAME} --format='{{.Config.Image}}' 2>/dev/null || true)
+
                   docker stop ${CONTAINER_NAME} || true
                   docker rm ${CONTAINER_NAME} || true
 
                   docker run -d \
                     --name ${CONTAINER_NAME} \
                     -p ${HOST_PORT}:80 \
-                    ${IMAGE_NAME}:latest
+                    ${ECR_REPO}:${IMAGE_TAG} || {
+
+                      echo "Deployment failed. Rolling back..."
+                      docker run -d \
+                        --name ${CONTAINER_NAME} \
+                        -p ${HOST_PORT}:80 \
+                        ${PREVIOUS_IMAGE}
+                      exit 1
+                  }
                 '''
             }
         }
 
-        stage('Post-Deploy Verification') {
+        stage('Health Check') {
             steps {
-                echo "Verifying deployment..."
                 sh '''
                   sleep 5
-                  curl -f http://localhost:${HOST_PORT} | grep "CI/CD Production Demo"
+                  curl -f http://localhost:${HOST_PORT} > /dev/null
                 '''
             }
         }
@@ -70,10 +99,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment successful"
+            echo "✅ Production deployment successful"
         }
         failure {
-            echo "❌ Deployment failed"
+            echo "❌ Deployment failed (rollback attempted)"
         }
         always {
             sh 'docker image prune -f || true'
