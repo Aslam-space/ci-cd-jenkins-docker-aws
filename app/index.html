@@ -1,10 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>CI/CD Jenkins Docker</title>
+    <meta charset="UTF-8">
+    <title>CI/CD Demo | Docker + Jenkins + AWS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            margin: 50px;
+            background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+        }
+        h1 {
+            color: #1f2937;
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.2rem;
+            color: #334155;
+            margin: 10px 0;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #ef4444;
+        }
+        .card {
+            background: #fff;
+            display: inline-block;
+            padding: 25px 35px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+    </style>
 </head>
+
 <body>
-  <h1>Deployed via Jenkins Pipeline</h1>
-  <p>Built with Docker on AWS EC2</p>
+    <div class="card">
+        <h1>🚀 CI/CD Production Demo</h1>
+
+        <p>
+            This application is
+            <span class="highlight">automatically deployed</span>
+            via Jenkins Pipeline
+        </p>
+
+        <p>
+            Built & Dockerized on
+            <span class="highlight">AWS EC2</span>
+        </p>
+
+        <hr style="margin: 20px 0; opacity: 0.3;">
+
+        <p>
+            Build Number:
+            <span class="highlight">{{BUILD_NUMBER}}</span>
+        </p>
+
+        <p>
+            Git Commit:
+            <span class="highlight">{{GIT_COMMIT}}</span>
+        </p>
+
+        <p style="margin-top: 15px; font-size: 0.95rem; color: #64748b;">
+            Production-grade CI/CD using Docker + Jenkins
+        </p>
+    </div>
 </body>
 </html>
