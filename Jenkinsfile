@@ -3,28 +3,31 @@ pipeline {
 
     environment {
         IMAGE_NAME = "static-site-nginx"
-        DOCKER_TAG = "${BUILD_NUMBER}"
+        CONTAINER_NAME = "nginx-app"
+        HOST_PORT = "8090"
     }
 
     options {
-        buildDiscarder(logRotator(numToKeepStr: '10')) // Keep last 10 builds
-        timestamps() // Console timestamps
+        timestamps()
+        buildDiscarder(logRotator(numToKeepStr: '15'))
+        disableConcurrentBuilds()
     }
 
     stages {
-        stage('Checkout') {
+
+        stage('Checkout Source') {
             steps {
-                echo "Checking out code..."
+                echo "Checking out source code from Git..."
                 checkout scm
             }
         }
 
-        stage('Inject Build Info') {
+        stage('Inject Build Metadata') {
             steps {
-                echo "Injecting Jenkins build number into index.html..."
+                echo "Injecting Jenkins metadata into UI..."
                 sh '''
-                # Replace placeholder {{BUILD_NUMBER}} in HTML with actual Jenkins build number
-                sed -i "s/{{BUILD_NUMBER}}/${BUILD_NUMBER}/g" app/index.html
+                  sed -i "s/{{BUILD_NUMBER}}/${BUILD_NUMBER}/g" app/index.html
+                  sed -i "s/{{GIT_COMMIT}}/${GIT_COMMIT}/g" app/index.html
                 '''
             }
         }
@@ -32,38 +35,48 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "Building Docker image..."
-                script {
-                    docker.build("${IMAGE_NAME}:${DOCKER_TAG}")
-                }
-            }
-        }
-
-        stage('Run Docker Container') {
-            steps {
-                echo "Stopping old container if exists..."
                 sh '''
-                docker stop app || true
-                docker rm app || true
-                echo "Running new container..."
-                docker run -d --name app -p 8090:80 ${IMAGE_NAME}:${DOCKER_TAG}
+                  docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+                  docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest
                 '''
             }
         }
 
-        stage('Health Check') {
+        stage('Deploy Container') {
             steps {
-                echo "Checking container health..."
-                sh 'curl -f http://localhost:8090 || exit 1'
+                echo "Deploying container on EC2..."
+                sh '''
+                  docker stop ${CONTAINER_NAME} || true
+                  docker rm ${CONTAINER_NAME} || true
+
+                  docker run -d \
+                    --name ${CONTAINER_NAME} \
+                    -p ${HOST_PORT}:80 \
+                    ${IMAGE_NAME}:latest
+                '''
+            }
+        }
+
+        stage('Post-Deploy Verification') {
+            steps {
+                echo "Verifying deployment..."
+                sh '''
+                  sleep 5
+                  curl -f http://localhost:${HOST_PORT} | grep "CI/CD Production Demo"
+                '''
             }
         }
     }
 
     post {
         success {
-            echo "✅ Pipeline completed successfully! Visit http://<EC2_PUBLIC_IP>:8090 to see the page."
+            echo "✅ Deployment successful"
         }
         failure {
-            echo "❌ Pipeline failed. Check console output for details."
+            echo "❌ Deployment failed"
+        }
+        always {
+            sh 'docker image prune -f || true'
         }
     }
 }
