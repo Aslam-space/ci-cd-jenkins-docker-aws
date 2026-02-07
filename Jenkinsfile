@@ -10,6 +10,7 @@ pipeline {
         IMAGE_TAG      = "${BUILD_NUMBER}-${GIT_COMMIT.take(7)}"
         CONTAINER_NAME = 'nginx-app'
         HOST_PORT      = '8090'
+        DOCKER_BUILDKIT = '1'
     }
 
     options {
@@ -55,11 +56,27 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Clean Docker Environment') {
             steps {
                 sh '''
-                  docker build -t ${ECR_REPO_NAME}:${IMAGE_TAG} .
+                  echo "🧹 Cleaning old Docker containers and images..."
+                  docker container prune -f || true
+                  docker image prune -af || true
                 '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    retry(2) {
+                        sh '''
+                          echo "🚀 Building Docker image..."
+                          # Copy only the app folder to reduce context size
+                          docker build --progress=plain -t ${ECR_REPO_NAME}:${IMAGE_TAG} app/
+                        '''
+                    }
+                }
             }
         }
 
@@ -79,13 +96,17 @@ pipeline {
 
         stage('Push Image to ECR') {
             steps {
-                sh '''
-                  docker tag ${ECR_REPO_NAME}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}
-                  docker tag ${ECR_REPO_NAME}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO_NAME}:latest
+                script {
+                    retry(2) {
+                        sh '''
+                          docker tag ${ECR_REPO_NAME}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}
+                          docker tag ${ECR_REPO_NAME}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO_NAME}:latest
 
-                  docker push ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}
-                  docker push ${ECR_REGISTRY}/${ECR_REPO_NAME}:latest
-                '''
+                          docker push ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}
+                          docker push ${ECR_REGISTRY}/${ECR_REPO_NAME}:latest
+                        '''
+                    }
+                }
             }
         }
 
@@ -138,7 +159,10 @@ pipeline {
             echo "❌ Deployment failed"
         }
         always {
-            sh 'docker image prune -f || true'
+            sh '''
+              echo "🧹 Cleaning up Docker images..."
+              docker image prune -af || true
+            '''
         }
     }
 }
