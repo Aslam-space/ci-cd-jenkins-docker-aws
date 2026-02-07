@@ -23,7 +23,13 @@ pipeline {
 
         stage('Checkout Source') {
             steps {
-                checkout scm
+                checkout([$class: 'GitSCM',
+                          branches: [[name: '*/main']],
+                          userRemoteConfigs: [[
+                              url: 'https://github.com/Aslam-space/ci-cd-jenkins-docker-aws.git',
+                              credentialsId: 'github-credentials'
+                          ]]
+                ])
             }
         }
 
@@ -72,7 +78,6 @@ pipeline {
                     retry(2) {
                         sh '''
                           echo "🚀 Building Docker image..."
-                          # Copy only the app folder to reduce context size
                           docker build --progress=plain -t ${ECR_REPO_NAME}:${IMAGE_TAG} app/
                         '''
                     }
