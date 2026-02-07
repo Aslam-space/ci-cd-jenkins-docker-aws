@@ -2,11 +2,14 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION      = "us-east-1"
-        ECR_REPO        = "123456789012.dkr.ecr.us-east-1.amazonaws.com/static-site"
-        IMAGE_TAG       = "${BUILD_NUMBER}"
-        CONTAINER_NAME  = "nginx-app"
-        HOST_PORT       = "8090"
+        AWS_REGION     = 'us-east-1'
+        AWS_ACCOUNT_ID = '123456789012'
+        ECR_REPO_NAME  = 'static-site'
+        ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+        IMAGE_TAG      = "${BUILD_NUMBER}-${GIT_COMMIT.take(7)}"
+        CONTAINER_NAME = 'nginx-app'
+        HOST_PORT      = '8090'
     }
 
     options {
@@ -27,28 +30,53 @@ pipeline {
             steps {
                 sh '''
                   sed -i "s/{{BUILD_NUMBER}}/${BUILD_NUMBER}/g" app/index.html
-                  sed -i "s/{{GIT_COMMIT}}/${GIT_COMMIT}/g" app/index.html
+                  sed -i "s/{{GIT_COMMIT}}/${GIT_COMMIT.take(7)}/g" app/index.html
                 '''
+            }
+        }
+
+        stage('Preflight Checks') {
+            steps {
+                sh '''
+                  command -v docker >/dev/null || { echo "Docker missing"; exit 1; }
+                  command -v aws >/dev/null || { echo "AWS CLI missing"; exit 1; }
+                '''
+            }
+        }
+
+        stage('AWS Cred Smoke Test') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-prod-creds'
+                ]]) {
+                    sh 'aws sts get-caller-identity'
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                  docker build -t static-site:${IMAGE_TAG} .
-                '''
+                script {
+                    def retryCount = 2
+                    retry(retryCount) {
+                        sh '''
+                          docker build -t ${ECR_REPO_NAME}:${IMAGE_TAG} .
+                        '''
+                    }
+                }
             }
         }
 
         stage('Authenticate to AWS ECR') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-prod-creds'
+                ]]) {
                     sh '''
                       aws ecr get-login-password --region ${AWS_REGION} \
-                      | docker login --username AWS --password-stdin ${ECR_REPO}
+                      | docker login --username AWS --password-stdin ${ECR_REGISTRY}
                     '''
                 }
             }
@@ -57,8 +85,11 @@ pipeline {
         stage('Push Image to ECR') {
             steps {
                 sh '''
-                  docker tag static-site:${IMAGE_TAG} ${ECR_REPO}:${IMAGE_TAG}
-                  docker push ${ECR_REPO}:${IMAGE_TAG}
+                  docker tag ${ECR_REPO_NAME}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}
+                  docker tag ${ECR_REPO_NAME}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO_NAME}:latest
+
+                  docker push ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG}
+                  docker push ${ECR_REGISTRY}/${ECR_REPO_NAME}:latest
                 '''
             }
         }
@@ -66,7 +97,8 @@ pipeline {
         stage('Deploy with Rollback Safety') {
             steps {
                 sh '''
-                  PREVIOUS_IMAGE=$(docker inspect ${CONTAINER_NAME} --format='{{.Config.Image}}' 2>/dev/null || true)
+                  PREVIOUS_IMAGE=$(docker inspect ${CONTAINER_NAME} \
+                    --format='{{.Config.Image}}' 2>/dev/null || echo "")
 
                   docker stop ${CONTAINER_NAME} || true
                   docker rm ${CONTAINER_NAME} || true
@@ -74,13 +106,19 @@ pipeline {
                   docker run -d \
                     --name ${CONTAINER_NAME} \
                     -p ${HOST_PORT}:80 \
-                    ${ECR_REPO}:${IMAGE_TAG} || {
+                    ${ECR_REGISTRY}/${ECR_REPO_NAME}:${IMAGE_TAG} || {
 
-                      echo "Deployment failed. Rolling back..."
-                      docker run -d \
-                        --name ${CONTAINER_NAME} \
-                        -p ${HOST_PORT}:80 \
-                        ${PREVIOUS_IMAGE}
+                      echo "❌ Deployment failed"
+
+                      if [ -n "$PREVIOUS_IMAGE" ]; then
+                        echo "↩ Rolling back to $PREVIOUS_IMAGE"
+                        docker run -d \
+                          --name ${CONTAINER_NAME} \
+                          -p ${HOST_PORT}:80 \
+                          $PREVIOUS_IMAGE
+                      else
+                        echo "⚠ No previous image found"
+                      fi
                       exit 1
                   }
                 '''
@@ -91,7 +129,7 @@ pipeline {
             steps {
                 sh '''
                   sleep 5
-                  curl -f http://localhost:${HOST_PORT} > /dev/null
+                  curl -f http://localhost:${HOST_PORT} || exit 1
                 '''
             }
         }
@@ -102,7 +140,7 @@ pipeline {
             echo "✅ Production deployment successful"
         }
         failure {
-            echo "❌ Deployment failed (rollback attempted)"
+            echo "❌ Deployment failed"
         }
         always {
             sh 'docker image prune -f || true'
