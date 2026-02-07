@@ -57,14 +57,9 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    def retryCount = 2
-                    retry(retryCount) {
-                        sh '''
-                          docker build -t ${ECR_REPO_NAME}:${IMAGE_TAG} .
-                        '''
-                    }
-                }
+                sh '''
+                  docker build -t ${ECR_REPO_NAME}:${IMAGE_TAG} .
+                '''
             }
         }
 
