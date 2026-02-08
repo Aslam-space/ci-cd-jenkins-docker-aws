@@ -20,6 +20,7 @@ pipeline {
         stage('Inject Build Metadata') {
             steps {
                 sh '''
+                #!/bin/bash
                 sed -i "s/{{BUILD_NUMBER}}/${BUILD_NUMBER}/g" app/index.html
                 sed -i "s/{{GIT_COMMIT}}/${GIT_COMMIT:0:7}/g" app/index.html
                 '''
