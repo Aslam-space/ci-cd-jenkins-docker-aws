@@ -22,7 +22,8 @@ pipeline {
                 sh '''
                 #!/bin/bash
                 sed -i "s/{{BUILD_NUMBER}}/${BUILD_NUMBER}/g" app/index.html
-                sed -i "s/{{GIT_COMMIT}}/${GIT_COMMIT:0:7}/g" app/index.html
+                GIT_SHORT=$(echo ${GIT_COMMIT} | cut -c1-7)
+                sed -i "s/{{GIT_COMMIT}}/${GIT_SHORT}/g" app/index.html
                 '''
             }
         }
