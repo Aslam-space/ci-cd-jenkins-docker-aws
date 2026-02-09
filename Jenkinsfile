@@ -40,7 +40,8 @@ pipeline {
         stage('Build Multi-Stage Docker Image') {
             steps {
                 sh '''
-                docker build -t ${IMAGE_NAME} -f Dockerfile.multi-stage ${APP_DIR}/
+                # ✅ FIX: use repo root as Docker build context
+                docker build -t ${IMAGE_NAME} -f Dockerfile.multi-stage .
                 '''
             }
         }
