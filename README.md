@@ -37,8 +37,6 @@ This repository demonstrates a **production-grade CI/CD pipeline** for a Dockeri
 5. Push a GitHub commit → Jenkins automatically rebuilds and redeploys.  
 6. Health checks confirm the container is running.
 
-> ⚠ Note: Cloudflare URL is temporary and changes with each session. This design prioritizes **cost-efficiency and security**.
-
 ---
 
 ## Tech Stack
