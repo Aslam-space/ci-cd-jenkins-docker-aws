@@ -6,6 +6,7 @@
 
 **Repository:** `ci-cd-jenkins-docker-aws`  
 **Role:** Full DevOps Pipeline Showcase for Static Website Deployment  
+
 ---
 
 ## ✨ Features
@@ -47,9 +48,15 @@
 
 ## 🖥 Live Demo / Preview
 
-> **Note:** Instance runs on-demand. You can request demo by starting EC2 instance.  
+> **Note:** Instance runs on-demand. EC2 must be started for the live site.  
 
-Example URL:
+Example URL (starts manually on-demand):  
+`http://your-ec2-public-ip:8090`  
+
+![Website Preview](docs/preview.jpeg)
+
+📄 [Full Website Preview PDF](docs/preview.pdf)
+
 ---
 
 ## 🚀 Project Overview
@@ -57,14 +64,9 @@ Example URL:
 This project demonstrates a **complete end-to-end CI/CD pipeline** for deploying a static website using **Jenkins, Docker, and AWS**, with monitoring and automated health checks.  
 
 The goal is to showcase the **full DevOps lifecycle**:
-- Code push → Automated build → Containerized deployment → Health monitoring → Cloud hosting
+- Code push → Automated build → Containerized deployment → Health monitoring → Cloud hosting  
 
 This pipeline ensures that every change in the repository is automatically deployed to the live environment with minimal manual intervention.
-
----
-![Website Preview](docs/preview-placeholder.png)  
-
-> Replace `preview-placeholder.png` with actual screenshot of the site.
 
 ---
 
@@ -83,6 +85,3 @@ docker run -d --name ci-cd-container -p 8090:80 ci-cd-static:latest
 
 # Verify container health
 ./healthcheck.sh
-
-## 🏗 Architecture
-
