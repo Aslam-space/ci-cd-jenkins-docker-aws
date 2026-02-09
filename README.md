@@ -1,60 +1,35 @@
-# CI/CD Pipeline: Jenkins + Docker + AWS
+# CI/CD Jenkins + Docker + AWS Static Site Pipeline
 
-This repository demonstrates a **production-grade CI/CD pipeline** for a Dockerized static website, integrating **Jenkins, Docker, AWS, and Cloudflare** to simulate real-world DevOps workflows. The project is designed for **on-demand live demos** and showcases hands-on end-to-end pipeline automation.
+**Repository:** `ci-cd-jenkins-docker-aws`  
+**Role:** Full DevOps Pipeline Showcase  
 
 ---
 
 ## Project Overview
 
-- **Source Control:** GitHub repository triggers Jenkins pipeline on every push.  
-- **Continuous Integration:** Jenkins declarative pipeline automates code checkout, metadata injection, Docker build, container replacement, and image push to AWS ECR.  
-- **Continuous Deployment:** Multi-stage Docker builds optimize image size and ensure smooth container deployment.  
-- **Secure Public Access:** Cloudflare Tunnel exposes the running application via HTTPS during live demos.  
-- **Monitoring & Health Checks:** Custom healthcheck script ensures uptime and reliability.  
-- **Cost-Aware:** EC2 instance and services run on-demand, minimizing cloud expenses.
+This project demonstrates a complete CI/CD pipeline for deploying a static website using Jenkins, Docker, and AWS, including monitoring and automated health checks.  
 
 ---
 
-## Key Features
+## Architecture
+---
 
-- Automated **CI/CD pipeline** triggered by GitHub push  
-- **Dynamic metadata injection**: BUILD_NUMBER, GIT_COMMIT, cache-busting  
-- **Multi-stage Docker builds** for optimized, production-ready images  
-- **Zero-downtime container replacement**  
-- **AWS ECR** integration for versioned container images  
-- **Cloudflare Tunnel** for secure, temporary public access  
-- **Health checks** for container monitoring  
-- Cost-efficient design for **on-demand live demo**
+## Features
+
+- Automated CI/CD: Push code → Jenkins builds → Docker container updates  
+- Multi-stage Docker: Optimized image size, reproducible builds  
+- Health Checks: Automatic container monitoring and restart if unhealthy  
+- AWS ECR Integration: Container images stored securely in the cloud  
+- Cloudflare Ready: Supports secure HTTPS deployment  
+- Dynamic Metadata: Injects build number and Git commit hash for traceability  
 
 ---
 
-## How the Demo Works
+## How to Run Locally
 
-1. Start the EC2 instance manually.  
-2. Launch Jenkins service.  
-3. Deploy the Docker container via Jenkins pipeline.  
-4. Run Cloudflare Tunnel to generate a temporary public URL.  
-5. Push a GitHub commit → Jenkins automatically rebuilds and redeploys.  
-6. Health checks confirm the container is running.
-
----
-
-## Tech Stack
-
-- **CI/CD:** Jenkins (Declarative Pipeline)  
-- **Containerization:** Docker (Multi-stage builds)  
-- **Cloud Infrastructure:** AWS EC2, AWS ECR  
-- **Secure Exposure:** Cloudflare Tunnel  
-- **Scripting:** Bash, Linux commands  
-- **Monitoring:** Health check scripts inside containers
-
----
-
-## Skills Demonstrated
-
-- End-to-end **CI/CD implementation**  
-- Docker multi-stage builds and container lifecycle management  
-- AWS deployment and ECR versioning  
-- Automated deployment with secure public exposure  
-- Cost-aware, on-demand cloud infrastructure management  
-- Live, hands-on DevOps workflow demonstration
+```bash
+git clone https://github.com/Aslam-space/ci-cd-jenkins-docker-aws.git
+cd ci-cd-jenkins-docker-aws
+docker build -t ci-cd-static:latest -f Dockerfile.multi-stage app/
+docker run -d --name ci-cd-container -p 8090:80 ci-cd-static:latest
+./healthcheck.sh
