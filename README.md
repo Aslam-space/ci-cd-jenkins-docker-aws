@@ -29,6 +29,7 @@ Key focus areas include:
 
 ## 2. High-Level Architecture
 Developer Push (GitHub) │ │ Webhook Event ▼ Jenkins CI/CD Pipeline ├─ Source Code Checkout ├─ Build Metadata Injection ├─ Multi-Stage Docker Image Build ├─ Stop & Replace Running Container ├─ Application Health Validation ├─ Image Versioning & Tagging └─ Push Image to AWS ECR │ ▼ AWS EC2 (Docker Runtime) └─ Nginx Container Serving Static Website │ ▼ Cloudflare Tunnel / Proxy └─ HTTPS, DNS, and Security Layer
+
 ---
 
 ## 3. CI/CD Pipeline Design (Jenkins)
