@@ -5,72 +5,63 @@
 [![AWS](https://img.shields.io/badge/AWS-deployed-orange)](#)
 
 **Repository:** `ci-cd-jenkins-docker-aws`  
-**Purpose:** End-to-End DevOps CI/CD Pipeline Showcase (Recruiter-Ready)
+**Category:** DevOps / CI-CD / Cloud Automation
 
 ---
 
-## 🚀 Project Overview
+## Project Overview
 
-This project demonstrates a **complete production-style CI/CD pipeline** for deploying a static website using **GitHub, Jenkins, Docker, and AWS EC2**, with container health checks and automated redeployment.
+This repository contains an end-to-end **CI/CD pipeline implementation** for deploying a static website using **Jenkins, Docker, and AWS EC2**, with container health verification and automated redeployment.
 
-Every code change triggers a pipeline that:
-- Builds a Docker image
-- Deploys a container on EC2
-- Verifies container health
-- Pushes the image to AWS ECR
-
-This repo is designed to **prove real DevOps hands-on skills**, not just theory.
+The pipeline is triggered by GitHub webhooks and performs automated build, deployment, validation, and image publishing to AWS ECR.
 
 ---
 
-## ✨ Key Features
+## Features
 
-- Automated CI/CD using **GitHub Webhooks + Jenkins**
-- **Multi-stage Docker build** for optimized images
-- **Zero-downtime container replacement**
-- Automatic **container health verification**
-- **AWS ECR image push**
-- Metadata injection (`BUILD_NUMBER`, `GIT_COMMIT`)
-- Automatic Docker cleanup to save disk space
-- Production-style Jenkinsfile (Declarative Pipeline)
+- Automated CI/CD using GitHub Webhooks and Jenkins  
+- Multi-stage Docker builds for optimized images  
+- Automated container replacement on deployment  
+- Container health verification and restart handling  
+- Docker image publishing to AWS ECR  
+- Build metadata injection (Build Number, Git Commit)  
+- Automated Docker image cleanup  
 
-------
+---
 
-## 🖥 Live Demo / Preview
+## Tools & Technologies
 
-> ⚠️ EC2 instance is started **on-demand** to reduce cost.
-
-**Example URL:**
-
-## 🛠 Tools & Technologies
-
-| Tool | Purpose |
+| Tool | Usage |
 |----|----|
-| GitHub | Source control & webhook trigger |
-| Jenkins | CI/CD automation |
+| GitHub | Source control and webhook trigger |
+| Jenkins | CI/CD pipeline automation |
 | Docker | Containerization |
 | AWS EC2 | Deployment host |
 | AWS ECR | Docker image registry |
-| Nginx | Static website hosting |
-| Bash | Automation & health checks |
+| Nginx | Static content hosting |
+| Bash | Automation and health checks |
+
+------
+
+## Application Preview
+
+> The EC2 instance is started on demand.
+
+**Application URL format:**
+### Website Screenshot
+
+![Static Site Preview](my%20site-demo.jpeg)
+
+### Detailed Pipeline Walkthrough (PDF)
+
+[View CI/CD Pipeline Demo](CI_CD%20Pipeline%20Demo.pdf)
 
 ---
 
-## 🏗 CI/CD Architecture Flow
-### 📸 Website Preview
-
-![CI/CD Static Site Preview](my%20site-demo.jpeg)
-
-### 📄 Full Pipeline Walkthrough (PDF)
-
-[View Full CI/CD Pipeline Demo](CI_CD%20Pipeline%20Demo.pdf)
-
+## Repository Structure
 ---
 
-## 📁 Repository Structure
----
-
-## ▶️ Run Locally (Optional)
+## Local Execution (Optional)
 
 ```bash
 git clone https://github.com/Aslam-space/ci-cd-jenkins-docker-aws.git
@@ -78,3 +69,5 @@ cd ci-cd-jenkins-docker-aws
 
 docker build -t ci-cd-static:latest -f Dockerfile.multi-stage app/
 docker run -d --name ci-cd-container -p 8090:80 ci-cd-static:latest
+
+## CI/CD Architecture
