@@ -61,7 +61,7 @@ The pipeline is triggered by GitHub webhooks and performs automated build, deplo
 ## Repository Structure
 ---
 
-## Local Execution (Optional)
+## Local Execution 
 
 ```bash
 git clone https://github.com/Aslam-space/ci-cd-jenkins-docker-aws.git
