@@ -187,7 +187,7 @@ Active learning and demonstration repository.
 ## 🔗 Live Website (Public Preview)
 
 GitHub Pages (always live):  
-https://aslam-space.github.io/ci-cd-jenkins-docker-aws/
+https://ci-cd-jenkins-docker-aws.onrender.com
 
 Production Deployment (on-demand):  
 Docker + Jenkins + AWS EC2
