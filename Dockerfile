@@ -8,8 +8,8 @@ RUN apk add --no-cache bash sed curl
 WORKDIR /app
 
 # Copy only app files needed for final site
-COPY app/ ./app/
-COPY index.html ./app/
+COPY app/ /usr/share/nginx/html/
+COPY index.html /usr/share/nginx/html/
 # Ensure permissions
 RUN chmod -R 755 /app
 
