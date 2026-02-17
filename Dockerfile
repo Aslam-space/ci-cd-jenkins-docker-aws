@@ -11,7 +11,7 @@ WORKDIR /app
 COPY app/ /usr/share/nginx/html/
 COPY index.html /usr/share/nginx/html/
 # Ensure permissions
-RUN chmod -R 755 /app
+RUN chmod -R 755 /usr/share/nginx/html
 
 # Optional: create a simple container health script inside container
 RUN echo '#!/bin/sh\n' \
@@ -28,7 +28,7 @@ FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy app from builder stage
-COPY --from=builder /app /usr/share/nginx/html
+COPY --from=builder /usr/share/nginx/html /usr/share/nginx/html
 
 # Copy custom nginx config if exists
 COPY app/nginx /etc/nginx/conf.d/default.conf
