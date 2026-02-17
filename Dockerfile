@@ -10,8 +10,6 @@ WORKDIR /app
 # Copy only app files needed for final site
 COPY app/ ./app/
 COPY index.html ./app/
-COPY metadata.json ./app/
-
 # Ensure permissions
 RUN chmod -R 755 /app
 
